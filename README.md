@@ -22,9 +22,9 @@
   - Built on Turbopack for a lightning-fast HMR development experience
 - [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/)
   - Realtime voice agents with seamless audio streaming
-  - Real-time image streaming and analysis capabilities
+  - Realtime image streaming and analysis capabilities
 - [Camera Integration](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)
-  - Real-time webcam access with live video streaming
+  - Realtime webcam access with live video streaming
   - Image capture and frame-by-frame analysis
 - [Shadcn/ui](https://ui.shadcn.com)
   - Styling with [Tailwind CSS](https://tailwindcss.com)
@@ -36,7 +36,7 @@ This app utilizes the [OpenAI API](https://openai.com/) for its AI capabilities.
 
 - Realtime Model (`gpt-realtime`): Higher quality conversational model with higher latency
 
-The app leverages these models through the [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/) to create a sophisticated voice-driven camera experience with real-time audio processing and intelligent agent handoffs.
+The app leverages these models through the [OpenAI Agent SDK](https://openai.github.io/openai-agents-js/guides/voice-agents/) to create a sophisticated voice-driven camera experience with realtime audio processing and intelligent agent handoffs.
 
 ## Deploy your own
 
