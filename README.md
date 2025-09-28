@@ -4,7 +4,7 @@
 </a>
 
 <p align="center">
-  AI Camera App Built With Next.js and OpenAI.
+  Realtime AI Camera Built with Next.js and OpenAI.
 </p>
 
 <p align="center">
