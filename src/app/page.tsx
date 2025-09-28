@@ -193,11 +193,17 @@ export default function RealtimeVoiceApp() {
           )}
 
           {isConnected ? (
-            <Button onClick={handleDisconnect} size="sm" variant="destructive">
+            <Button
+              className="cursor-pointer"
+              onClick={handleDisconnect}
+              size="sm"
+              variant="destructive"
+            >
               Disconnect
             </Button>
           ) : (
             <Button
+              className="cursor-pointer"
               disabled={connectionStatus === "connecting"}
               onClick={handleConnect}
               size="sm"

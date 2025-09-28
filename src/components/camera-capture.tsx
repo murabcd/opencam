@@ -6,7 +6,6 @@ import {
   Play,
   RotateCcw,
   Square,
-  Video,
   VideoOff,
   ZoomIn,
   ZoomOut,
@@ -68,13 +67,9 @@ function VideoControls({
               className="h-10 w-10 rounded-full p-0"
               onClick={onToggleCamera}
               size="sm"
-              variant={isActive ? "default" : "secondary"}
+              variant="default"
             >
-              {isActive ? (
-                <Video className="h-4 w-4" />
-              ) : (
-                <VideoOff className="h-4 w-4" />
-              )}
+              <VideoOff className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>

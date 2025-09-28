@@ -33,7 +33,13 @@ export const Greeting = ({ disabled, onStart }: GreetingProps) => (
         Click below to enable your camera.
       </p>
       {onStart && (
-        <Button disabled={disabled} onClick={onStart} size="sm">
+        <Button
+          className="cursor-pointer"
+          disabled={disabled}
+          onClick={onStart}
+          size="sm"
+          variant="outline"
+        >
           Enable Camera
         </Button>
       )}
