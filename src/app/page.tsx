@@ -80,9 +80,11 @@ export default function RealtimeVoiceApp() {
   };
 
   const handleCaptureImage = (dataUrl: string) => {
-    if (session.current) {
+    if (session.current && isConnected) {
       session.current.addImage(dataUrl, { triggerResponse: true });
     }
+    // When not connected, the image is still captured and stored in the camera component
+    // This allows testing of camera functionality without AI connection
   };
 
   const StreamingIntervalMs = 2000;
@@ -235,17 +237,20 @@ export default function RealtimeVoiceApp() {
         <div className="flex h-full items-center justify-center">
           <CameraCapture
             className="w-full"
-            disabled={!isConnected}
+            disabled={false}
             isStreaming={isStreaming}
             onCapture={handleCaptureImage}
-            onStreamStart={handleStreamStart}
-            onStreamStop={handleStreamStop}
+            onStreamStart={isConnected ? handleStreamStart : undefined}
+            onStreamStop={isConnected ? handleStreamStop : undefined}
             onVideoRef={(ref) => {
               videoRef.current = ref;
             }}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             onZoomReset={handleZoomReset}
+            onSwitchCamera={() => {
+              // Camera switch is handled internally by the CameraCapture component
+            }}
             zoomLevel={zoomLevel}
           />
         </div>

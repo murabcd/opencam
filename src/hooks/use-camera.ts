@@ -1,10 +1,15 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+const mobileBreakpoint = 768;
+const mobileUserAgentRegex = /Android|iPhone|iPad|iPod/i;
+
 /**
  * useCamera
  * - Starts/stops a webcam stream on a provided <video> element.
  * - Captures a frame as a JPEG data URL.
  * - Maintains last captured photo and basic state.
+ * - Supports switching between front and back cameras on mobile.
  */
 export function useCamera() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -13,6 +18,25 @@ export function useCamera() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [lastPhoto, setLastPhoto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>(
+    []
+  );
+
+  // Enumerate available devices
+  const enumerateDevices = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(
+        (device) => device.kind === "videoinput"
+      );
+      setAvailableDevices(videoDevices);
+    } catch {
+      // Silently handle device enumeration failure
+      setAvailableDevices([]);
+    }
+  }, []);
+
   const stop = useCallback(() => {
     const stream = streamRef.current;
     if (stream) {
@@ -34,7 +58,9 @@ export function useCamera() {
     }
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+      });
       streamRef.current = stream;
       const video = videoRef.current;
       if (!video) {
@@ -57,7 +83,7 @@ export function useCamera() {
       setError(e instanceof Error ? e.message : "Failed to start camera");
       stop();
     }
-  }, [isActive, stop]);
+  }, [isActive, stop, facingMode]);
   const capture = useCallback(() => {
     if (!videoRef.current) {
       throw new Error("Video element not ready");
@@ -90,12 +116,58 @@ export function useCamera() {
       setIsCapturing(false);
     }
   }, [isActive]);
+
+  const switchCamera = useCallback(async () => {
+    if (!isActive) {
+      return;
+    }
+
+    const newFacingMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newFacingMode);
+
+    // Stop current stream
+    stop();
+
+    // Start new stream with different camera
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newFacingMode },
+      });
+      streamRef.current = stream;
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
+        setIsActive(true);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to switch camera");
+      // Revert facing mode on error
+      setFacingMode(facingMode);
+    }
+  }, [isActive, facingMode, stop]);
+
+  useEffect(() => {
+    enumerateDevices();
+  }, [enumerateDevices]);
+
   useEffect(
     () => () => {
       stop();
     },
     [stop]
   );
+
+  // On mobile devices, assume multiple cameras are available if we can't enumerate them
+  const isMobile =
+    typeof window !== "undefined" &&
+    (mobileUserAgentRegex.test(navigator.userAgent) ||
+      window.innerWidth < mobileBreakpoint);
+
+  // On mobile, assume multiple cameras exist even if we can only detect one
+  // iOS Safari heavily restricts device enumeration for privacy
+  const hasMultipleCameras = availableDevices.length > 1 || isMobile;
+
   return {
     videoRef,
     isActive,
@@ -106,6 +178,10 @@ export function useCamera() {
     stop,
     capture,
     setLastPhoto,
+    switchCamera,
+    facingMode,
+    availableDevices,
+    canSwitchCamera: hasMultipleCameras,
   };
 }
 export type UseCameraReturn = ReturnType<typeof useCamera>;

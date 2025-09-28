@@ -6,6 +6,7 @@ import {
   Plus,
   RotateCcw,
   Square,
+  SwitchCamera,
   Video,
   VideoOff,
 } from "lucide-react";
@@ -31,6 +32,8 @@ type VideoControlsProps = {
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onZoomReset?: () => void;
+  onSwitchCamera?: () => void;
+  canSwitchCamera?: boolean;
 };
 
 function VideoControls({
@@ -46,6 +49,8 @@ function VideoControls({
   onZoomIn,
   onZoomOut,
   onZoomReset,
+  onSwitchCamera,
+  canSwitchCamera,
 }: VideoControlsProps) {
   return (
     <div className="-translate-x-1/2 absolute bottom-4 left-1/2 transform">
@@ -62,6 +67,18 @@ function VideoControls({
             <VideoOff className="h-4 w-4" />
           )}
         </Button>
+
+        {canSwitchCamera && onSwitchCamera && (
+          <Button
+            className="h-10 w-10 rounded-full p-0 sm:hidden"
+            disabled={disabled}
+            onClick={onSwitchCamera}
+            size="sm"
+            variant="secondary"
+          >
+            <SwitchCamera className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* Zoom Controls */}
         {onZoomOut && (
@@ -142,6 +159,7 @@ type CameraCaptureProps = {
   onZoomOut?: () => void;
   onZoomReset?: () => void;
   onVideoRef?: (ref: HTMLVideoElement | null) => void;
+  onSwitchCamera?: () => void;
 };
 
 export function CameraCapture({
@@ -156,6 +174,7 @@ export function CameraCapture({
   onZoomOut,
   onZoomReset,
   onVideoRef,
+  onSwitchCamera,
 }: CameraCaptureProps) {
   const {
     videoRef,
@@ -166,6 +185,8 @@ export function CameraCapture({
     start,
     stop,
     capture,
+    switchCamera,
+    canSwitchCamera,
   } = useCamera();
 
   const handleCapture = useCallback(async () => {
@@ -176,6 +197,15 @@ export function CameraCapture({
       // Capture failed
     }
   }, [capture, onCapture]);
+
+  const handleSwitchCamera = useCallback(async () => {
+    try {
+      await switchCamera();
+      onSwitchCamera?.();
+    } catch {
+      // Switch failed
+    }
+  }, [switchCamera, onSwitchCamera]);
 
   // Pass video ref to parent component
   useEffect(() => {
@@ -244,6 +274,8 @@ export function CameraCapture({
           onZoomIn={onZoomIn}
           onZoomOut={onZoomOut}
           onZoomReset={onZoomReset}
+          onSwitchCamera={handleSwitchCamera}
+          canSwitchCamera={canSwitchCamera}
           zoomLevel={zoomLevel}
         />
       )}
