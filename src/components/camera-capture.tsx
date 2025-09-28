@@ -11,7 +11,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Greeting } from "@/components/greeting";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCamera } from "@/hooks/use-camera";
+import { useScreenShare } from "@/hooks/use-screen";
 
 const MAX_ZOOM_LEVEL = 3;
 const MIN_ZOOM_LEVEL = 1;
@@ -42,6 +43,192 @@ type VideoControlsProps = {
   canSwitchCamera?: boolean;
 };
 
+function ToggleButton({
+  onToggleCamera,
+  isActive,
+}: {
+  onToggleCamera: () => void;
+  isActive: boolean;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className="h-10 w-10 rounded-full p-0"
+          onClick={onToggleCamera}
+          size="sm"
+          variant="default"
+        >
+          <VideoOff className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isActive ? "Turn off camera" : "Turn on camera"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CameraSwitchButton({
+  onSwitchCamera,
+  disabled,
+}: {
+  onSwitchCamera: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className="h-10 w-10 rounded-full p-0 sm:hidden"
+          disabled={disabled}
+          onClick={onSwitchCamera}
+          size="sm"
+          variant="secondary"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Switch camera</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function ZoomControls({
+  zoomLevel,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
+}: {
+  zoomLevel: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onZoomReset?: () => void;
+}) {
+  return (
+    <>
+      {onZoomOut && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="h-10 w-10 rounded-full p-0"
+              disabled={zoomLevel <= MIN_ZOOM_LEVEL}
+              onClick={onZoomOut}
+              size="sm"
+              variant="secondary"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Zoom out</TooltipContent>
+        </Tooltip>
+      )}
+
+      {onZoomReset && zoomLevel > MIN_ZOOM_LEVEL && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="h-10 w-10 rounded-full p-0"
+              onClick={onZoomReset}
+              size="sm"
+              variant="secondary"
+            >
+              <Minimize className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Reset zoom ({zoomLevel}x)</TooltipContent>
+        </Tooltip>
+      )}
+
+      {onZoomIn && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="h-10 w-10 rounded-full p-0"
+              disabled={zoomLevel >= MAX_ZOOM_LEVEL}
+              onClick={onZoomIn}
+              size="sm"
+              variant="secondary"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Zoom in</TooltipContent>
+        </Tooltip>
+      )}
+    </>
+  );
+}
+
+function CaptureButton({
+  onCapture,
+  disabled,
+  isCapturing,
+}: {
+  onCapture: () => void;
+  disabled: boolean;
+  isCapturing: boolean;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className="h-10 w-10 rounded-full p-0"
+          disabled={disabled || isCapturing}
+          onClick={onCapture}
+          size="sm"
+          variant="default"
+        >
+          {isCapturing ? "..." : <Camera className="h-4 w-4" />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isCapturing ? "Capturing..." : "Take photo"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function StreamButton({
+  onStreamStart,
+  onStreamStop,
+  isStreaming,
+  disabled,
+}: {
+  onStreamStart?: () => void;
+  onStreamStop?: () => void;
+  isStreaming: boolean;
+  disabled: boolean;
+}) {
+  const hasStreamControls = onStreamStart && onStreamStop;
+  if (!hasStreamControls) {
+    return null;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          className="h-10 w-10 rounded-full p-0"
+          disabled={disabled}
+          onClick={isStreaming ? onStreamStop : onStreamStart}
+          size="sm"
+          variant={isStreaming ? "destructive" : "default"}
+        >
+          {isStreaming ? (
+            <Square className="h-4 w-4" />
+          ) : (
+            <Play className="h-4 w-4" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isStreaming ? "Stop streaming" : "Start streaming"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function VideoControls({
   isActive,
   disabled,
@@ -61,129 +248,34 @@ function VideoControls({
   return (
     <div className="-translate-x-1/2 absolute bottom-4 left-1/2 transform">
       <div className="flex items-center gap-2 rounded-lg bg-black/50 px-4 py-2 backdrop-blur-sm">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="h-10 w-10 rounded-full p-0"
-              onClick={onToggleCamera}
-              size="sm"
-              variant="default"
-            >
-              <VideoOff className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isActive ? "Turn off camera" : "Turn on camera"}
-          </TooltipContent>
-        </Tooltip>
+        <ToggleButton isActive={isActive} onToggleCamera={onToggleCamera} />
 
         {canSwitchCamera && onSwitchCamera && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-10 w-10 rounded-full p-0 sm:hidden"
-                disabled={disabled}
-                onClick={onSwitchCamera}
-                size="sm"
-                variant="secondary"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Switch camera</TooltipContent>
-          </Tooltip>
+          <CameraSwitchButton
+            disabled={disabled}
+            onSwitchCamera={onSwitchCamera}
+          />
         )}
 
-        {/* Zoom Controls */}
-        {onZoomOut && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-10 w-10 rounded-full p-0"
-                disabled={zoomLevel <= MIN_ZOOM_LEVEL}
-                onClick={onZoomOut}
-                size="sm"
-                variant="secondary"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Zoom out</TooltipContent>
-          </Tooltip>
-        )}
+        <ZoomControls
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onZoomReset={onZoomReset}
+          zoomLevel={zoomLevel}
+        />
 
-        {onZoomReset && zoomLevel > MIN_ZOOM_LEVEL && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-10 w-10 rounded-full p-0"
-                onClick={onZoomReset}
-                size="sm"
-                variant="secondary"
-              >
-                <Minimize className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reset zoom ({zoomLevel}x)</TooltipContent>
-          </Tooltip>
-        )}
+        <CaptureButton
+          disabled={disabled}
+          isCapturing={isCapturing}
+          onCapture={onCapture}
+        />
 
-        {onZoomIn && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-10 w-10 rounded-full p-0"
-                disabled={zoomLevel >= MAX_ZOOM_LEVEL}
-                onClick={onZoomIn}
-                size="sm"
-                variant="secondary"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Zoom in</TooltipContent>
-          </Tooltip>
-        )}
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="h-10 w-10 rounded-full p-0"
-              disabled={disabled || isCapturing}
-              onClick={onCapture}
-              size="sm"
-              variant="default"
-            >
-              {isCapturing ? "..." : <Camera className="h-4 w-4" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isCapturing ? "Capturing..." : "Take photo"}
-          </TooltipContent>
-        </Tooltip>
-
-        {onStreamStart && onStreamStop && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="h-10 w-10 rounded-full p-0"
-                disabled={disabled}
-                onClick={isStreaming ? onStreamStop : onStreamStart}
-                size="sm"
-                variant={isStreaming ? "destructive" : "default"}
-              >
-                {isStreaming ? (
-                  <Square className="h-4 w-4" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isStreaming ? "Stop streaming" : "Start streaming"}
-            </TooltipContent>
-          </Tooltip>
-        )}
+        <StreamButton
+          disabled={disabled}
+          isStreaming={isStreaming}
+          onStreamStart={onStreamStart}
+          onStreamStop={onStreamStop}
+        />
       </div>
     </div>
   );
@@ -202,6 +294,7 @@ type CameraCaptureProps = {
   onZoomReset?: () => void;
   onVideoRef?: (ref: HTMLVideoElement | null) => void;
   onSwitchCamera?: () => void;
+  initialMode?: "camera" | "screen";
 };
 
 export function CameraCapture({
@@ -217,7 +310,15 @@ export function CameraCapture({
   onZoomReset,
   onVideoRef,
   onSwitchCamera,
+  initialMode = "camera",
 }: CameraCaptureProps) {
+  const [mode, setMode] = useState<"camera" | "screen">(initialMode);
+
+  const camera = useCamera();
+  const screenShare = useScreenShare();
+
+  // Use the appropriate hook based on mode
+  const currentHook = mode === "camera" ? camera : screenShare;
   const {
     videoRef,
     isActive,
@@ -227,9 +328,11 @@ export function CameraCapture({
     start,
     stop,
     capture,
-    switchCamera,
-    canSwitchCamera,
-  } = useCamera();
+  } = currentHook;
+
+  // Get mode-specific properties
+  const switchCamera = mode === "camera" ? camera.switchCamera : undefined;
+  const canSwitchCamera = mode === "camera" ? camera.canSwitchCamera : false;
 
   const handleCapture = useCallback(async () => {
     try {
@@ -242,12 +345,31 @@ export function CameraCapture({
 
   const handleSwitchCamera = useCallback(async () => {
     try {
-      await switchCamera();
-      onSwitchCamera?.();
+      if (switchCamera) {
+        await switchCamera();
+        onSwitchCamera?.();
+      }
     } catch {
       // Switch failed
     }
   }, [switchCamera, onSwitchCamera]);
+
+  const handleStartScreenShare = useCallback(async () => {
+    // Switch to screen mode first
+    setMode("screen");
+
+    // Start screen share immediately - force it to use screen share hook
+    try {
+      await screenShare.start();
+      // Auto-start streaming for screen share
+      if (onStreamStart) {
+        onStreamStart();
+      }
+    } catch {
+      // Handle error silently or show user feedback
+      screenShare.setError("Failed to start screen sharing");
+    }
+  }, [screenShare, onStreamStart]);
 
   // Pass video ref to parent component
   useEffect(() => {
@@ -321,7 +443,14 @@ export function CameraCapture({
       )}
 
       {/* Camera Off State */}
-      {!isActive && <Greeting disabled={disabled} onStart={start} />}
+      {!isActive && (
+        <Greeting
+          disabled={disabled}
+          mode={mode}
+          onStart={start}
+          onStartScreenShare={handleStartScreenShare}
+        />
+      )}
 
       {/* Video Controls Overlay */}
       {isActive && (

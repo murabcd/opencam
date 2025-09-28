@@ -1,11 +1,11 @@
 "use client";
 
 import { RealtimeAgent, RealtimeSession } from "@openai/agents/realtime";
+import { Mic, MicOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CameraCapture } from "@/components/camera-capture";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff } from "lucide-react";
 import { getToken } from "./server/session";
 
 const agent = new RealtimeAgent({
@@ -225,15 +225,15 @@ export default function RealtimeVoiceApp() {
             onCapture={handleCaptureImage}
             onStreamStart={isConnected ? handleStreamStart : undefined}
             onStreamStop={isConnected ? handleStreamStop : undefined}
+            onSwitchCamera={() => {
+              // Camera switch is handled internally by the CameraCapture component
+            }}
             onVideoRef={(ref) => {
               videoRef.current = ref;
             }}
             onZoomIn={handleZoomIn}
             onZoomOut={handleZoomOut}
             onZoomReset={handleZoomReset}
-            onSwitchCamera={() => {
-              // Camera switch is handled internally by the CameraCapture component
-            }}
             zoomLevel={zoomLevel}
           />
         </div>
