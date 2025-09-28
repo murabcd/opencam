@@ -4,7 +4,6 @@ import { RealtimeAgent, RealtimeSession } from "@openai/agents/realtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CameraCapture } from "@/components/camera-capture";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff } from "lucide-react";
 import { getToken } from "./server/session";
@@ -25,16 +24,6 @@ export default function RealtimeVoiceApp() {
   const [connectionStatus, setConnectionStatus] = useState<
     "disconnected" | "connecting" | "connected"
   >("disconnected");
-
-  const getBadgeVariant = () => {
-    if (connectionStatus === "connected") {
-      return "default";
-    }
-    if (connectionStatus === "connecting") {
-      return "secondary";
-    }
-    return "outline";
-  };
 
   useEffect(() => {
     session.current = new RealtimeSession(agent, {
@@ -182,18 +171,6 @@ export default function RealtimeVoiceApp() {
             <div className="h-4 w-4 rounded-sm bg-background" />
           </div>
           <h1 className="text-balance font-semibold text-xl">OpenCam</h1>
-          <Badge
-            className="hidden capitalize sm:flex"
-            variant={getBadgeVariant()}
-          >
-            {connectionStatus === "connecting" && (
-              <div className="mr-2 h-2 w-2 animate-pulse rounded-full bg-current" />
-            )}
-            {connectionStatus === "connected" && (
-              <div className="mr-2 h-2 w-2 rounded-full bg-green-500" />
-            )}
-            {connectionStatus}
-          </Badge>
         </div>
 
         <div className="flex items-center gap-3">
@@ -216,7 +193,7 @@ export default function RealtimeVoiceApp() {
           )}
 
           {isConnected ? (
-            <Button onClick={handleDisconnect} variant="destructive">
+            <Button onClick={handleDisconnect} size="sm" variant="destructive">
               Disconnect
             </Button>
           ) : (
