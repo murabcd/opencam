@@ -57,7 +57,7 @@ export const Greeting = ({
         )}
         {onStartScreenShare && (
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer hidden sm:block"
             disabled={disabled}
             onClick={onStartScreenShare}
             size="sm"
