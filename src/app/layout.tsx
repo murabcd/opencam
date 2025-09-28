@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Realtime Agent Next.js Demo",
-  description: "A demo of the Realtime Agent framework in Next.js",
+  title: "OpenCam",
+  description: "Realtime AI Camera",
 };
 
 export default function RootLayout({
